@@ -1,0 +1,163 @@
+---
+title: "Panel de datos y Modelo predictivo Pobreza-Migrantes y Desplazados"
+author: "Equipo Sociedad 1: Marisol Valencia, José Hernández y otros"
+date: "2025-11-28"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, include=FALSE}
+require(lme4)
+require(lattice)
+require(gplots)
+require(readxl)
+require(car)
+```
+
+
+# Pobreza y Desplazamiento: indicadores y posibles efectos.
+
+```{r, include=FALSE}
+vicpobreza <- read_excel("~/RETO CONCURSO DATOS/totales.xlsx")
+attach(vicpobreza)
+```
+
+
+## Planteamiento del problema
+
+La pobreza multidimensional tiene algunos aspectos de condiciones precarias que pueden incluso empeorar con las víctimas de desplazamiento en Colombia, o con los Migrantes de otros países. Hay evidencias de indicadores de pobreza multidimensional mucho mayores para la población migrante venezolana, según el DANE (2025), peores que los del índice de Pobreza Multidimensional a nivel nacional, pues los rangos de IPM de migrantes están por encima de los 35%. Lo anterior permite mostrar que la pobreza general de los migrantes merece una atención, dado que sus condiciones afectan no sólo a su misma población, sino los habitantes regionales colombianos, para lo cual los índices mostrados en este panel de datos de visualización pueden facilitar la planeación de políticas públicas regionales, Se diseña un panel de datos en POWER BI, y se estiman dos modelos predictivos, usando el modelo lineal mixto, todo con el fin de crear estrategias para disminuir o mitigar los problemas en salud, o educación, hacinamiento, trabajo en  víctimas, desplazados o población en pobreza por departamento. 
+
+
+## Propuesta del panel de datos y modelo predictivo
+
+Se busca analizar la incidencia de dos variables relevantes al desplazamiento y al analfabetismo sobre el índice de pobreza multidimensional (IPM) en los años de 2023 y 2024. Se usa el conjunto de datos del DANE sobre el IPM, así datos de los desplazados y de migrantes, filtrando los años correspondientes, para calcular la tasa de desplazamiento por departamento en estos mismos períodos. Dada la naturaleza de los datos con correlación intraclase, por departamento, no es posible estimar un modelo de regresión lineal, sino un modelo lineal mixto.
+
+
+## Panel de datos
+
+La primera página del Panel de datos muestra un diagrama de barras combinado, donde se aprecian los índices de pobreza multidimensional y variables asociadas como el hacinamiento, y el total de personas en desplazamiento, por departamento, lo cual permite observar por cada región, estos tres indicadores: porcentajes de personas en pobreza, con hacinamiento y desplazados, observando mayores índices de desplazados en Antioquia, Valle del Cauca, Norte de Santander, y en Vichada, La Guajira y Guainía, más pobreza.
+
+
+```{r, echo=FALSE, fig.cap="Figura del panel", out.width='50%', fig.align='center'}
+knitr::include_graphics("~/RETO CONCURSO DATOS/pobreza1.png")
+```
+
+
+Además, se aprecian indicadores altos de trabajo informal en regiones con alta pobreza. Por ejemplo, en departamentos como Vichada, Chocó, la Guajira, se aprecia más pobreza, analfabetismo. Sin embargo, en regiones donde no son tan altos estos índices de pobreza y condiciones precarias, hay más desplazamiento, como Antioquia, Valle del Cauca y Bolívar.
+
+
+```{r, echo=FALSE, fig.cap="Figura del panel", out.width='50%', fig.align='center'}
+knitr::include_graphics("~/RETO CONCURSO DATOS/pobreza2.png")
+```
+
+
+Por otro lado, la entrada de migrantes de Venezuela y Haití, refleja que Bogotá, los Santanderes, Nariño, aunque no muestran altas condiciones de pobreza, sí llegan más migrantes, lo cual también podría explicarse por buenas condiciones de vida de dichas regiones y de su llegada.
+
+
+```{r, echo=FALSE, fig.cap="Figura del panel", out.width='50%', fig.align='center'}
+knitr::include_graphics("~/RETO CONCURSO DATOS/pobreza3.png")
+```
+
+
+Por otro lado, los desplazados por etnia reflejan que en algunos departamentos como el Chocó, Nariño, San Andrés, Cauca, Bolívar, es alto el porcentaje de personas desplazadas afrocolombianas, en Guainía, Amazonas, Putumayo, es alto el porcentaje de personas indígenas desplazadas, lo que puede ameritar estrategias de investigación más profundas y mejoramiento en las condiciones de vida de dicha población. 
+
+
+```{r, echo=FALSE, fig.cap="Figura del panel", out.width='50%', fig.align='center'}
+knitr::include_graphics("~/RETO CONCURSO DATOS/Desplazados.png")
+```
+
+
+## Modelo lineal mixto para Índice de Pobreza Multidimensional
+
+La variable respuesta es el Índice de Pobreza Multidimensional, contrastando esta con respecto a la Tasa de desplazados y al porcentaje de Analfabetismo. 
+
+El Modelo Lineal Mixto explica una asociación significativa del indicador de Pobreza Multidimensional con respecto al índice de analfabetismo y los desplazados. Refleja además que no es muy alto el total de víctimas desplazadas en regiones donde hay alto analfabetismo, lo que explica quizás que esta población prefiere zonas de mejores condiciones de vida.
+
+```{r, include=FALSE}
+modelo1=lmer(Pobrezaipm~Tasa_desplazados*Analfabetismo+(1|Departamento)-1,data=vicpobreza)
+```
+
+```{r}
+summary(modelo1)
+Anova(modelo1,type='III')
+```
+## Comportamiento y efectos sobre los desplazados
+
+```{r, include=FALSE}
+victimas25 <- read_excel("~/RETO CONCURSO DATOS/victimas2025.xlsx")
+attach(victimas25)
+```
+
+## Modelo lineal generalizado mixto
+
+Al considerar los datos del año 2025, se consideran todos los meses, por ello se presenta la naturaleza de los datos con correlación intraclase por departamento, la variable respuesta de desplazamiento se cruza con la etnia y el rango de edad en el modelo lineal generalizado mixto, ya que no se distribuye de forma normal.
+
+La variable respuesta es la cantidad de desplazados por departamento para el año 2025, la cual se comporta con una distribución Poisson, razones por las cuales se considera el modelo como Modelo Lineal Generalizado Mixto. Entre las covariables están la etnia y el rango de edad.
+
+```{r,include=FALSE}
+modelo2=glmer(PER_DECLA~ETNIA+CICLO_VITAL+(1|ESTADO_DEPTO)-1,family=poisson,data=victimas25)
+```
+
+El modelo muestra significancia en todas las variables contempladas, indicando que la ocurrencia del desplazamiento puede afectarse según la etnia y sus asociaciones según la región, así como la edad. Uno de los efectos más altos para el desplazamiento lo generan rangos de edad de mayores de 18 años, siendo más alto el que está entre 29 y 59 años, así como no tener etnia, seguido de ser afrocolombiano y luego, ser indígena.
+
+```{r}
+summary(modelo2)
+```
+
+El modelo muestra la significancia con un nivel de error del 5%.
+```{r}
+Anova(modelo2,type='III')
+```
+
+# Proyección de impactos esperados
+
+A funcionarios analista de políticas públicas requiere ver en el panel estadístico de datos (Power BI) la proporción de personas migrantes y de víctimas del conflicto, y pobreza multidimensional por departamento, dando prioridad a las regiones más críticas (ordenadas de mayor a menor).
+
+A los analistas regionales de políticas públicas, viendo la proporción de personas en analfabetismo en una región determinada (filtrada) en el panel de datos.
+
+A los analistas de datos, será útil para proyectar presupuestos de planes, políticas, estrategias de mitigación de pobreza, educación, mejoras de salud, analizando variables de mayor significancia relacionadas con la proporción de población en pobreza para los departamentos colombianos.
+
+Los modelos también pueden mostrar capacidades de asociación entre variables.
+
+Se espera que se pueda dar prioridad al aumento de las investigaciones relacionadas con pobreza y desplazamiento, en especial, las regiones froterizas, o departamentos con altos índices de desplazados indígenas y afrocolombianos, como Guainía, Putumayo, Chocó, Amazonas, Cauca, enntre los más relevantes encontrados.
+
+## Otros impactos
+
+1.	Permite analizar los porcentajes de índice pobreza y desplazamientos de los migrantes en Colombia para poder realizar proyectos departamentales con el fin de suplir las necesidades mínimas a estas comunidades, y con políticas públicas definidas disminuir estos índices de desplazamientos que nos arrojan los datos estadísticos del proyecto analizado.
+
+2.	 En la pobreza, el analfabetismo y el trabajo informal tienen alta incidencia. En el panel de datos, se evidencia los departamentos más críticos, para atacar y disminuir el alfabetismo, la falta de cobertura en salud y un trabajo de digno para mejorar la calidad de vida de estas comunidades con el apoyo de las autoridades gubernamentales.
+
+3.	Se observó un alto impacto del deplazamiento y del hacinamiento que tienen los departamentos especialmente que comparten fronteras por donde ingresan, lo cual puede mejorar las políticas públicas necesarias para controlar dichos problemas. Uno de estos puede ser mejoras en los registros y control de estos ciudadanos por parte de las autoridades responsables. 
+
+4.	Hay impactos del desplazamiento y migrantes en diversos departamentos donde son mejores condiciones de vida, pero puede generar problemas de trabajos informales o falta de acceso a la salud, ya que puede afectar la inversión y presupuesto de los departamentos, así como los proyectos e inversión en lo socio-económico.
+
+5.	Se encuentra impacto de la edad en el desplazamiento, siendo muchos jóvenes  adolescentes con afectaciones en salud y condiciones adecuadas de vida, lo que obliga a nuevas y mejores políticas públicas para mejorarlo.
+
+6.	Este proyecto nos arroja cifras relevantes de desplazamiento y pobreza, que afecta especialmente al departamento de Antioquia, vichada, La Guajira, Guainía, Nariño, Santander, departamentos con conflictos armados o cerca de fronteras con Venezuela.
+
+
+En Síntesis:
+
+
+1. Impactos sociales: en términos de sociedad y políticas públicas para disminuir la pobreza.
+
+2. Impactos de desarrollo económico: por medio de nuevas estrategias de apoyo en educación, trabajo y desarrollo social
+
+3. Impactos en salud pública: apoyo y asistencia en nuevos y mejores programas de salud y educación a adultos y jóvenes víctimas de desplazamiento o migrantes, disminuyendo la pobreza.
+
+
+
+# Referencias
+
+DANE. (2025). Pobreza Multidimensional 2024. URL: https://www.dane.gov.co/index.php/estadisticas-por-tema/pobreza-y-condiciones-de-vida/pobreza-multidimensional
+
+
+Datos abiertos Colombia. (2025). VICTIMAS POR AÑOS – DEPARTAMENTAL. En: https://www.datos.gov.co/Inclusi-n-Social-y-Reconciliaci-n/VICTIMAS-POR-A-OS-DEPARTAMENTAL/jurc-ck3a/about_data
+
+
+LINK A VIDEO PANEL: https://drive.google.com/file/d/1ixNMLdF0oAAuIFThOwbHAb9zp7dQe3cu/view?usp=sharing
+
+LINK A VIDEO MODELO: https://drive.google.com/file/d/13oexyrgE1bVGBAj53LNazz_CgV24_F0o/view?usp=sharing
